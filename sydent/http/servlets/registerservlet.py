@@ -86,8 +86,11 @@ class RegisterServlet(SydentResource):
                 1024 * 5,
             )
         except (DNSLookupError, ConnectError, ResponseFailed) as e:
+            reason = {type(e).__name__}
+            if isinstance(e, ResponseFailed):
+                reason = f"{type(e).__name__} - {e.reasons} - {e.response}"
             return federation_request_problem(
-                f"Unable to contact the Matrix homeserver ({type(e).__name__})"
+                f"Unable to contact the Matrix homeserver ({reason})"
             )
         except JSONDecodeError:
             return federation_request_problem(

@@ -77,14 +77,14 @@ class Sydent:
         self,
         sydent_config: SydentConfig,
         reactor: SydentReactor = twisted.internet.reactor,  # type: ignore[assignment]
-        use_tls_for_federation: bool = True,
     ):
         self.config = sydent_config
 
         self.reactor = reactor
-        self.use_tls_for_federation = use_tls_for_federation
+        self.use_tls_for_federation = sydent_config.general.use_tls_for_federation
 
         logger.info("Starting Sydent server")
+        logger.info("Using TLS for federation? %s", self.use_tls_for_federation)
 
         self.db: sqlite3.Connection = SqliteDatabase(self).db
 

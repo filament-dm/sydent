@@ -86,6 +86,10 @@ class GeneralConfig(BaseConfig):
             cfg.get("general", "delete_tokens_on_bind")
         )
 
+        self.use_tls_for_federation = parse_cfg_bool(
+            cfg.get("general", "use_tls_for_federation")
+        )
+
         ip_blacklist = list_from_comma_sep_string(cfg.get("general", "ip.blacklist"))
         if not ip_blacklist:
             ip_blacklist = DEFAULT_IP_RANGE_BLACKLIST

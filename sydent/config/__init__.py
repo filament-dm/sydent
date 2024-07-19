@@ -79,6 +79,8 @@ CONFIG_DEFAULTS = {
         "homeserver_allow_list": "",
         # If set to 'false', entirely disable access via the V1 api.
         "enable_v1_access": "true",
+        # If set to 'true', the identity server will use TLS for federation requests.
+        "use_tls_for_federation": "true"
     },
     "db": {
         "db.file": os.environ.get("SYDENT_DB_PATH", "sydent.db"),
