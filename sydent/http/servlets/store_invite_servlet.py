@@ -138,7 +138,7 @@ class StoreInviteServlet(SydentResource):
         substitutions["token"] = token
 
         for keyword in self.sydent.config.email.third_party_invite_keyword_blocklist:
-            for (key, value) in args.items():
+            for key, value in args.items():
                 # make sure the blocklist doesn't stomp on web_client_location url
                 if key == "org.matrix.web_client_location":
                     value = re.sub(r"^https?://", "", value)
@@ -184,13 +184,21 @@ class StoreInviteServlet(SydentResource):
 
             substitutions["bracketed_room_name"] = "(%s) " % substitutions["room_name"]
 
-        substitutions[
-            "web_client_location"
-        ] = self.sydent.config.email.default_web_client_location
-        if "org.matrix.web_client_location" in substitutions:
-            substitutions["web_client_location"] = substitutions[
-                "org.matrix.web_client_location"
-            ]
+        substitutions["web_client_location"] = (
+            self.sydent.config.email.default_web_client_location
+        )
+
+        # NOTE(blackmad): I genuinely don't understand where the
+        # "org.matrix.web_client_location" key is getting set
+        # but the result of it is that the web_client_location
+        # from the config file is getting replaced with element.io
+        # in invite emails, which we don't want. This config value
+        # is marked unstable anyway, so let's just hide it for now.
+        #
+        # if "org.matrix.web_client_location" in substitutions:
+        #     substitutions["web_client_location"] = substitutions[
+        #         "org.matrix.web_client_location"
+        #     ]
 
         if substitutions["room_type"] == "m.space":
             subject = self.sydent.config.email.invite_subject_space % substitutions
