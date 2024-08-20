@@ -188,6 +188,10 @@ class StoreInviteServlet(SydentResource):
             self.sydent.config.email.default_web_client_location
         )
 
+        substitutions["signurl_location"] = (
+            self.sydent.config.email.signurl_location or "https://matrix.org"
+        )
+
         # NOTE(blackmad): I genuinely don't understand where the
         # "org.matrix.web_client_location" key is getting set
         # but the result of it is that the web_client_location

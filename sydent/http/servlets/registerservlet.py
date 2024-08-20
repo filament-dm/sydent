@@ -92,9 +92,9 @@ class RegisterServlet(SydentResource):
             return federation_request_problem(
                 f"Unable to contact the Matrix homeserver ({reason})"
             )
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             return federation_request_problem(
-                "The Matrix homeserver returned invalid JSON"
+                f"The Matrix homeserver returned invalid JSON: {e.msg} {e.doc}"
             )
 
         if "sub" not in result:
@@ -126,7 +126,7 @@ class RegisterServlet(SydentResource):
 
         if user_id_server != matrix_server:
             return federation_request_problem(
-                "The Matrix homeserver returned a MXID belonging to another homeserver"
+                f"The Matrix homeserver returned a MXID belonging to another homeserver {user_id_server} vs {matrix_server}"
             )
 
         tok = issueToken(self.sydent, user_id)
