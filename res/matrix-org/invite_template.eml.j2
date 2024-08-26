@@ -19,6 +19,8 @@ Matrix client from https://matrix.org/docs/projects/try-matrix-now.html or use
 the single-click link below to join via Element (requires Chrome, Firefox,
 Safari, iOS or Android)
 
+If you are asked for a registration token while signing up, enter {{ token }}
+
 {{ web_client_location }}/#/room/{{ room_id|urlencode }}?email={{ to|urlencode }}&signurl={{ signurl_location|urlencode }}%2F_matrix%2Fidentity%2Fapi%2Fv1%2Fsign-ed25519%3Ftoken%3D{{ token|urlencode }}%26private_key%3D{{ ephemeral_private_key|urlencode }}&room_name={{ room_name|urlencode }}&room_avatar_url={{ room_avatar_url|urlencode }}&inviter_name={{ sender_display_name|urlencode }}&guest_access_token={{ guest_access_token|urlencode }}&guest_user_id={{ guest_user_id|urlencode }}&room_type={{ room_type|urlencode }}
 
 
@@ -111,6 +113,10 @@ link below to join via Element (requires
 <a href="https://www.getfirefox.com">Firefox</a> or
 <a href="https://www.apple.com/safari">Safari</a> on the web,
 or iOS or Android on mobile.)</p>
+</p>
+
+<p>
+    If you are asked for a registration token while signing up, enter {{ token }}
 </p>
 
 <p>
