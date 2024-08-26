@@ -62,6 +62,11 @@ class EmailConfig(BaseConfig):
             "email", "email.default_web_client_location"
         )
 
+        self.signurl_location = cfg.get("email", "email.signurl_location")
+
+        if self.signurl_location.endswith("/"):
+            self.signurl_location = self.signurl_location[:-1]
+
         self.username_obfuscate_characters = cfg.getint(
             "email", "email.third_party_invite_username_obfuscate_characters"
         )

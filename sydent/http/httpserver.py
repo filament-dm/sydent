@@ -17,6 +17,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+from sydent.http.servlets.tokeninfo import TokenInfoServlet
+from sydent.http.servlets.tokensbyaddress import TokensByAddressServlet
 import twisted.internet.ssl
 from twisted.web.resource import Resource
 from twisted.web.server import Site
@@ -215,6 +217,12 @@ class InternalApiHttpServer:
 
         authenticated_unbind = AuthenticatedUnbindThreePidServlet(self.sydent)
         internal.putChild(b"unbind", authenticated_unbind)
+
+        get_token_info = TokenInfoServlet(self.sydent)
+        internal.putChild(b"token_info", get_token_info)
+
+        tokens_by_address = TokensByAddressServlet(self.sydent)
+        internal.putChild(b"tokens_by_address", tokens_by_address)
 
         factory = Site(root)
         factory.displayTracebacks = False
