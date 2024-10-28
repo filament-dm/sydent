@@ -109,10 +109,15 @@ def get_args(
         )
     ):
         try:
+            body = request.content.read().decode("UTF-8")
             # json.loads doesn't allow bytes in Python 3.5
-            request_args = json_decoder.decode(request.content.read().decode("UTF-8"))
-        except ValueError:
-            raise MatrixRestError(400, "M_BAD_JSON", "Malformed JSON")
+            request_args = json_decoder.decode(body)
+        except ValueError as e:
+            raise MatrixRestError(
+                400,
+                "M_BAD_JSON",
+                f"Malformed JSON: {e} - BODY: {body}",
+            )
 
     # If we didn't get anything from that, and it's a v1 api path, try the request args
     # (element-web's usage of the ed25519 sign servlet currently involves
@@ -163,7 +168,6 @@ Res = TypeVar("Res", bound=Resource)
 def jsonwrap(f: Callable[[Res, Request], JsonDict]) -> Callable[[Res, Request], bytes]:
     @functools.wraps(f)
     def inner(self: Res, request: Request) -> bytes:
-
         """
         Runs a web handler function with the given request and parameters, then
         converts its result into JSON and returns it. If an error happens, also sets
@@ -180,14 +184,15 @@ def jsonwrap(f: Callable[[Res, Request], JsonDict]) -> Callable[[Res, Request], 
         except MatrixRestError as e:
             request.setResponseCode(e.httpStatus)
             return dict_to_json_bytes({"errcode": e.errcode, "error": e.error})
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             logger.exception("Exception processing request")
             request.setHeader("Content-Type", "application/json")
             request.setResponseCode(500)
             return dict_to_json_bytes(
                 {
                     "errcode": "M_UNKNOWN",
-                    "error": "Internal Server Error",
+                    "error": f"Internal Server Error:   {e}",
                 }
             )
 

@@ -55,19 +55,27 @@ class StoreInviteServlet(SydentResource):
     def render_POST(self, request: Request) -> JsonDict:
         send_cors(request)
 
-        args = get_args(
-            request,
-            (
-                "medium",
-                "address",
-                "room_id",
-                "sender",
-            ),
+        required_args = (
+            "medium",
+            "address",
+            "room_id",
+            "sender",
         )
+        non_required_args = ("skip_email",)
+        args = get_args(request, [*required_args, *non_required_args], required=False)
+        # enforce required
+        for arg in required_args:
+            if arg not in args:
+                raise MatrixRestError(
+                    400, "M_MISSING_PARAM", f"Missing required argument: {arg}"
+                )
+
         medium = args["medium"]
         address = args["address"]
         roomId = args["room_id"]
         sender = args["sender"]
+
+        skip_email = args.get("skip_email", False)
 
         # ensure we are casefolding email address before storing
         normalised_address = normalise_address(address, medium)
@@ -222,11 +230,12 @@ class StoreInviteServlet(SydentResource):
         else:
             templateFile = self.sydent.config.email.invite_template
 
-        try:
-            sendEmail(self.sydent, templateFile, normalised_address, substitutions)
-        except EmailAddressException:
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return {"errcode": "M_INVALID_EMAIL", "error": "Invalid email address"}
+        if not skip_email:
+            try:
+                sendEmail(self.sydent, templateFile, normalised_address, substitutions)
+            except EmailAddressException:
+                request.setResponseCode(HTTPStatus.BAD_REQUEST)
+                return {"errcode": "M_INVALID_EMAIL", "error": "Invalid email address"}
 
         pubKey = self.sydent.keyring.ed25519.verify_key
         pubKeyBase64 = encode_base64(pubKey.encode())

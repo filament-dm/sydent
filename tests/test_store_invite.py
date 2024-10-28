@@ -33,6 +33,33 @@ class StoreInviteTestCase(unittest.TestCase):
         self.sydent = make_sydent(test_config=config)
         self.sender = "@alice:wonderland"
 
+    def assertDictContains(self, actual_dict, expected_dict, msg=None):
+        """Assert that actual_dict contains all key/value pairs from expected_dict.
+
+        Args:
+            actual_dict: The dict to check
+            expected_dict: Dict containing the key/value pairs that should exist in actual_dict
+            msg: Optional message to display on failure
+        """
+        missing = {}
+        mismatched = {}
+        for key, expected_value in expected_dict.items():
+            if key not in actual_dict:
+                missing[key] = expected_value
+            elif actual_dict[key] != expected_value:
+                mismatched[key] = {
+                    "expected": expected_value,
+                    "actual": actual_dict[key],
+                }
+
+        if missing or mismatched:
+            msg = msg or ""
+            if missing:
+                msg += f"\nMissing expected keys: {missing}"
+            if mismatched:
+                msg += f"\nMismatched values: {mismatched}"
+            self.fail(msg)
+
     @parameterized.expand(
         [
             ("not@an@email@address",),
@@ -58,5 +85,49 @@ class StoreInviteTestCase(unittest.TestCase):
                 },
             )
 
-        self.assertEqual(channel.code, 400)
-        self.assertEqual(channel.json_body["errcode"], "M_INVALID_EMAIL")
+        self.assertEqual(channel.code, 400, channel.json_body)
+        self.assertEqual(
+            channel.json_body["errcode"], "M_INVALID_EMAIL", channel.json_body
+        )
+
+    def test_valid_email_sends_email(self) -> None:
+        """Test that a valid email address results in an email being sent"""
+        self.sydent.run()
+
+        with patch("sydent.http.servlets.store_invite_servlet.authV2") as authV2, patch(
+            "sydent.http.servlets.store_invite_servlet.sendEmail"
+        ) as mock_send_email:
+            authV2.return_value = Account(self.sender, 0, None)
+
+            request, channel = make_request(
+                self.sydent.reactor,
+                self.sydent.clientApiHttpServer.factory,
+                "POST",
+                "/_matrix/identity/v2/store-invite",
+                content={
+                    "address": "valid@example.com",
+                    "medium": "email",
+                    "room_id": "!myroom:test",
+                    "sender": self.sender,
+                },
+            )
+
+        self.assertEqual(channel.code, 200)
+        mock_send_email.assert_called_once()
+
+        self.assertEqual(
+            mock_send_email.call_args[0][1], "matrix-org/invite_template.eml.j2"
+        )
+        self.assertEqual(
+            mock_send_email.call_args[0][2],
+            "valid@example.com",
+        )
+
+        self.assertDictContains(
+            mock_send_email.call_args[0][3],
+            {
+                "room_id": "!myroom:test",
+                "sender": "@alice:wonderland",
+            },
+            "Email substitutions dict missing expected values",
+        )

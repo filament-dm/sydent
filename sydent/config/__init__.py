@@ -80,7 +80,7 @@ CONFIG_DEFAULTS = {
         # If set to 'false', entirely disable access via the V1 api.
         "enable_v1_access": "true",
         # If set to 'true', the identity server will use TLS for federation requests.
-        "use_tls_for_federation": "true"
+        "use_tls_for_federation": "true",
     },
     "db": {
         "db.file": os.environ.get("SYDENT_DB_PATH", "sydent.db"),
@@ -124,6 +124,7 @@ CONFIG_DEFAULTS = {
         # This should be the scheme and hostname only, see res/invite_template.eml
         # for the full URL that gets generated.
         "email.default_web_client_location": "https://app.element.io",
+        "email.signurl_location": "http://matrix.org",
         # When a user is invited to a room via their email address, that invite is
         # displayed in the room list using an obfuscated version of the user's email
         # address. These config options determine how much of the email address to

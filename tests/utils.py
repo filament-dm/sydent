@@ -87,11 +87,7 @@ def make_sydent(test_config: Optional[dict] = None) -> Sydent:
     sydent_config = SydentConfig()
     sydent_config.parse_config_dict(test_config)
 
-    return Sydent(
-        reactor=reactor,
-        sydent_config=sydent_config,
-        use_tls_for_federation=False,
-    )
+    return Sydent(reactor=reactor, sydent_config=sydent_config)
 
 
 @attr.s
