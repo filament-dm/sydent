@@ -29,6 +29,7 @@ class BlacklistingAgentTest(TestCase):
             "general": {
                 "ip.blacklist": "5.0.0.0/8",
                 "ip.whitelist": "5.1.1.1",
+                "use_tls_for_federation": "false",
             },
         }
 
