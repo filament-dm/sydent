@@ -68,13 +68,13 @@ def authV2(
     token = tokenFromRequest(request)
 
     if token is None:
-        raise MatrixRestError(401, "M_UNAUTHORIZED", "Unauthorized")
+        raise MatrixRestError(401, "M_UNAUTHORIZED", "Unauthorized - no token provided")
 
     accountStore = AccountStore(sydent)
 
     account = accountStore.getAccountByToken(token)
     if account is None:
-        raise MatrixRestError(401, "M_UNAUTHORIZED", "Unauthorized")
+        raise MatrixRestError(401, "M_UNAUTHORIZED", "Unauthorized - invalid token")
 
     if requireTermsAgreed:
         terms = get_terms(sydent)
