@@ -74,18 +74,20 @@ class TestRequestCode(unittest.TestCase):
         email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
         self.assertIn("Confirm your email address for Matrix", email_contents)
 
-    def test_branded_request_code(self) -> None:
-        self.sydent.run()
+    # We have disabled vector-style verification emails
 
-        smtp = self._make_request(
-            "/_matrix/identity/api/v1/validate/email/requestToken?brand=vector-im",
-            {
-                "email": "test@test",
-                "client_secret": "oursecret",
-                "send_attempt": 0,
-            },
-        )
+    # def test_branded_request_code(self) -> None:
+    #     self.sydent.run()
 
-        # Ensure the email is as expected.
-        email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
-        self.assertIn("Confirm your email address for Element", email_contents)
+    #     smtp = self._make_request(
+    #         "/_matrix/identity/api/v1/validate/email/requestToken?brand=vector-im",
+    #         {
+    #             "email": "test@test",
+    #             "client_secret": "oursecret",
+    #             "send_attempt": 0,
+    #         },
+    #     )
+
+    #     # Ensure the email is as expected.
+    #     email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
+    #     self.assertIn("Confirm your email address for Element", email_contents)

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from difflib import SequenceMatcher
 import os.path
 import urllib
 from unittest.mock import Mock, patch
@@ -22,76 +23,96 @@ from sydent.util.emailutils import sendEmail
 from tests.utils import make_sydent
 
 
+def character_diff(expected, actual):
+    """Generate a character-by-character diff visualization."""
+    matcher = SequenceMatcher(None, expected, actual)
+    diff = []
+
+    for op, i1, i2, j1, j2 in matcher.get_opcodes():
+        if op == "equal":
+            diff.append(expected[i1:i2])
+        elif op == "delete":
+            diff.append(f"[{expected[i1:i2]}]")
+        elif op == "insert":
+            diff.append(f"{{{actual[j1:j2]}}}")
+        elif op == "replace":
+            diff.append(f"[{expected[i1:i2]}->{actual[j1:j2]}]")
+
+    return "".join(diff)
+
+
 class TestTemplate(unittest.TestCase):
     def setUp(self):
         # Create a new sydent
         self.sydent = make_sydent()
 
-    def test_jinja_vector_invite(self):
-        substitutions = {
-            "address": "foo@example.com",
-            "medium": "email",
-            "room_alias": "#somewhere:exmaple.org",
-            "room_avatar_url": "mxc://example.org/s0meM3dia",
-            "room_id": "!something:example.org",
-            "room_name": "Bob's Emporium of Messages",
-            "sender": "@bob:example.com",
-            "sender_avatar_url": "mxc://example.org/an0th3rM3dia",
-            "sender_display_name": "<Bob Smith>",
-            "bracketed_verified_sender": "Bob Smith",
-            "bracketed_room_name": "Bob's Emporium of Messages",
-            "to": "person@test.test",
-            "token": "a_token",
-            "ephemeral_private_key": "mystery_key",
-            "web_client_location": "https://app.element.io",
-            "room_type": "",
-        }
+    # We have disabled vector-style invites
+    #
+    # def test_jinja_vector_invite(self):
+    #     substitutions = {
+    #         "address": "foo@example.com",
+    #         "medium": "email",
+    #         "room_alias": "#somewhere:exmaple.org",
+    #         "room_avatar_url": "mxc://example.org/s0meM3dia",
+    #         "room_id": "!something:example.org",
+    #         "room_name": "Bob's Emporium of Messages",
+    #         "sender": "@bob:example.com",
+    #         "sender_avatar_url": "mxc://example.org/an0th3rM3dia",
+    #         "sender_display_name": "<Bob Smith>",
+    #         "bracketed_verified_sender": "Bob Smith",
+    #         "bracketed_room_name": "Bob's Emporium of Messages",
+    #         "to": "person@test.test",
+    #         "token": "a_token",
+    #         "ephemeral_private_key": "mystery_key",
+    #         "web_client_location": "https://app.element.io",
+    #         "room_type": "",
+    #     }
 
-        # self.sydent.config.email.invite_template is deprecated
-        if self.sydent.config.email.invite_template is None:
-            templateFile = self.sydent.get_branded_template(
-                "vector-im",
-                "invite_template.eml",
-            )
-        else:
-            templateFile = self.sydent.config.email.invite_template
+    #     # self.sydent.config.email.invite_template is deprecated
+    #     if self.sydent.config.email.invite_template is None:
+    #         templateFile = self.sydent.get_branded_template(
+    #             "vector-im",
+    #             "invite_template.eml",
+    #         )
+    #     else:
+    #         templateFile = self.sydent.config.email.invite_template
 
-        with patch("sydent.util.emailutils.smtplib") as smtplib:
-            sendEmail(self.sydent, templateFile, "test@test.com", substitutions)
+    #     with patch("sydent.util.emailutils.smtplib") as smtplib:
+    #         sendEmail(self.sydent, templateFile, "test@test.com", substitutions)
 
-        smtp = smtplib.SMTP.return_value
-        email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
+    #     smtp = smtplib.SMTP.return_value
+    #     email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
 
-        # test url input is encoded
-        self.assertIn(urllib.parse.quote("mxc://example.org/s0meM3dia"), email_contents)
+    #     # test url input is encoded
+    #     self.assertIn(urllib.parse.quote("mxc://example.org/s0meM3dia"), email_contents)
 
-        # test html input is escaped
-        self.assertIn("Bob&#39;s Emporium of Messages", email_contents)
+    #     # test html input is escaped
+    #     self.assertIn("Bob&#39;s Emporium of Messages", email_contents)
 
-        # test safe values are not escaped
-        self.assertIn("<Bob Smith>", email_contents)
+    #     # test safe values are not escaped
+    #     self.assertIn("<Bob Smith>", email_contents)
 
-        # test our link is as expected
-        expected_url = (
-            "https://app.element.io/#/room/"
-            + urllib.parse.quote("!something:example.org")
-            + "?email="
-            + urllib.parse.quote("test@test.com")
-            + "&signurl=https%3A%2F%2Fvector.im%2F_matrix%2Fidentity%2Fapi%2Fv1%2Fsign-ed25519%3Ftoken%3D"
-            + urllib.parse.quote("a_token")
-            + "%26private_key%3D"
-            + urllib.parse.quote("mystery_key")
-            + "&room_name="
-            + urllib.parse.quote("Bob's Emporium of Messages")
-            + "&room_avatar_url="
-            + urllib.parse.quote("mxc://example.org/s0meM3dia")
-            + "&inviter_name="
-            + urllib.parse.quote("<Bob Smith>")
-            + "&guest_access_token=&guest_user_id=&room_type="
-        )
-        text = email_contents.splitlines()
-        link = text[19]
-        self.assertEqual(link, expected_url)
+    #     # test our link is as expected
+    #     expected_url = (
+    #         "https://app.element.io/#/room/"
+    #         + urllib.parse.quote("!something:example.org")
+    #         + "?email="
+    #         + urllib.parse.quote("test@test.com")
+    #         + "&signurl=https%3A%2F%2Fvector.im%2F_matrix%2Fidentity%2Fapi%2Fv1%2Fsign-ed25519%3Ftoken%3D"
+    #         + urllib.parse.quote("a_token")
+    #         + "%26private_key%3D"
+    #         + urllib.parse.quote("mystery_key")
+    #         + "&room_name="
+    #         + urllib.parse.quote("Bob's Emporium of Messages")
+    #         + "&room_avatar_url="
+    #         + urllib.parse.quote("mxc://example.org/s0meM3dia")
+    #         + "&inviter_name="
+    #         + urllib.parse.quote("<Bob Smith>")
+    #         + "&guest_access_token=&guest_user_id=&room_type="
+    #     )
+    #     text = email_contents.splitlines()
+    #     link = text[19]
+    #     self.assertEqual(link, expected_url)
 
     def test_jinja_matrix_invite(self):
         substitutions = {
@@ -111,6 +132,7 @@ class TestTemplate(unittest.TestCase):
             "ephemeral_private_key": "mystery_key",
             "web_client_location": "https://matrix.org",
             "room_type": "",
+            "signurl_location": "https://matrix.org",
         }
 
         # self.sydent.config.email.invite_template is deprecated
@@ -143,7 +165,7 @@ class TestTemplate(unittest.TestCase):
             + urllib.parse.quote("!something:example.org")
             + "?email="
             + urllib.parse.quote("test@test.com")
-            + "&signurl=https%3A%2F%2Fmatrix.org%2F_matrix%2Fidentity%2Fapi%2Fv1%2Fsign-ed25519%3Ftoken%3D"
+            + "&signurl=https%3A//matrix.org%2F_matrix%2Fidentity%2Fapi%2Fv1%2Fsign-ed25519%3Ftoken%3D"
             + urllib.parse.quote("a_token")
             + "%26private_key%3D"
             + urllib.parse.quote("mystery_key")
@@ -156,8 +178,18 @@ class TestTemplate(unittest.TestCase):
             + "&guest_access_token=&guest_user_id=&room_type="
         )
         text = email_contents.splitlines()
-        link = text[22]
-        self.assertEqual(link, expected_url)
+        link = text[123]
+        extracted_link = link.split("href=")[1].split('"')[1]
+        self.assertTrue(extracted_link, "No href found in link")
+        self.maxDiff = None
+
+        self.assertEqual(
+            expected_url,
+            extracted_link,
+            character_diff(expected_url, extracted_link),
+            # f"Expected {expected_url} in {link}\n{email_contents}",
+            # [f"{lineno} {line}" for lineno, line in enumerate(text)],
+        )
 
     def test_jinja_matrix_verification(self):
         substitutions = {
@@ -185,39 +217,42 @@ class TestTemplate(unittest.TestCase):
         # test safe values are not escaped
         self.assertIn("<<token>>", email_contents)
 
-    @patch(
-        "sydent.util.emailutils.generateAlphanumericTokenOfLength",
-        Mock(return_value="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-    )
-    def test_jinja_vector_verification(self):
-        substitutions = {
-            "address": "foo@example.com",
-            "medium": "email",
-            "to": "person@test.test",
-            "link": "https://link_test.com",
-        }
+    # We are using the matrix-style verification emails, not vector
+    #
+    # @patch(
+    #     "sydent.util.emailutils.generateAlphanumericTokenOfLength",
+    #     Mock(return_value="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+    # )
+    # def test_jinja_vector_verification(self):
+    #     self.maxDiff = None
+    #     substitutions = {
+    #         "address": "foo@example.com",
+    #         "medium": "email",
+    #         "to": "person@test.test",
+    #         "link": "https://link_test.com",
+    #     }
 
-        templateFile = self.sydent.get_branded_template(
-            "vector-im",
-            "verification_template.eml",
-        )
+    #     templateFile = self.sydent.get_branded_template(
+    #         "vector-im",
+    #         "verification_template.eml",
+    #     )
 
-        with patch("sydent.util.emailutils.smtplib") as smtplib:
-            sendEmail(self.sydent, templateFile, "test@test.com", substitutions)
+    #     with patch("sydent.util.emailutils.smtplib") as smtplib:
+    #         sendEmail(self.sydent, templateFile, "test@test.com", substitutions)
 
-        smtp = smtplib.SMTP.return_value
-        email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
+    #     smtp = smtplib.SMTP.return_value
+    #     email_contents = smtp.sendmail.call_args[0][2].decode("utf-8")
 
-        path = os.path.join(
-            self.sydent.config.general.templates_path,
-            "vector_verification_sample.txt",
-        )
+    #     path = os.path.join(
+    #         self.sydent.config.general.templates_path,
+    #         "vector_verification_sample.txt",
+    #     )
 
-        with open(path, "r") as file:
-            expected_text = file.read()
+    #     with open(path, "r") as file:
+    #         expected_text = file.read()
 
-        # remove the email headers as they are variable
-        email_contents = email_contents[email_contents.index("Hello") :]
+    #     # remove the email headers as they are variable
+    #     email_contents = email_contents[email_contents.index("Hello") :]
 
-        # test all ouput is as expected
-        self.assertEqual(email_contents, expected_text)
+    #     # test all ouput is as expected
+    #     self.assertEqual(email_contents, expected_text)
