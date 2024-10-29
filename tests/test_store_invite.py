@@ -133,6 +133,36 @@ class StoreInviteTestCase(unittest.TestCase):
             "Email substitutions dict missing expected values",
         )
 
+    def test_skip_email_flag_skips_sending_email(self) -> None:
+        """Test that setting skip_email=True prevents an email from being sent"""
+        self.sydent.run()
+
+        with patch("sydent.http.servlets.store_invite_servlet.authV2") as authV2, patch(
+            "sydent.http.servlets.store_invite_servlet.sendEmail"
+        ) as mock_send_email:
+            authV2.return_value = Account(self.sender, 0, None)
+
+            request, channel = make_request(
+                self.sydent.reactor,
+                self.sydent.clientApiHttpServer.factory,
+                "POST",
+                "/_matrix/identity/v2/store-invite",
+                content={
+                    "address": "valid@example.com",
+                    "medium": "email",
+                    "room_id": "!myroom:test",
+                    "sender": self.sender,
+                    "skip_email": True,
+                },
+            )
+
+        self.assertEqual(channel.code, 200)
+        mock_send_email.assert_not_called()
+
+        # Verify the invite is still stored even though email wasn't sent
+        invites = JoinTokenStore(self.sydent).getTokens("email", "valid@example.com")
+        self.assertEqual(len(invites), 1)
+
     def test_space_id_is_included_in_email(self) -> None:
         """Test that space_id is threaded through our system"""
         self.sydent.run()
