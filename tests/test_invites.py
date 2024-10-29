@@ -50,6 +50,7 @@ class ThreepidInvitesTestCase(unittest.TestCase):
             "!someroom:example.com",
             "@jane:example.com",
             "sometoken",
+            None,
         )
 
         # Make sure the token still exists and can be retrieved.
@@ -178,6 +179,7 @@ class ThreepidInvitesNoDeleteTestCase(unittest.TestCase):
             "!someroom:example.com",
             "@jane:example.com",
             "sometoken",
+            None,
         )
 
         # Make sure the token still exists and can be retrieved.

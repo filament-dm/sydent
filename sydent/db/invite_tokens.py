@@ -23,7 +23,13 @@ class JoinTokenStore:
         self.sydent = sydent
 
     def storeToken(
-        self, medium: str, normalised_address: str, roomId: str, sender: str, token: str
+        self,
+        medium: str,
+        normalised_address: str,
+        roomId: str,
+        sender: str,
+        token: str,
+        space_id: Optional[str],
     ) -> None:
         """
         Store a new invite token and its metadata. Please note that email
@@ -40,9 +46,17 @@ class JoinTokenStore:
 
         cur.execute(
             "INSERT INTO invite_tokens"
-            " ('medium', 'address', 'room_id', 'sender', 'token', 'received_ts')"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (medium, normalised_address, roomId, sender, token, int(time.time())),
+            " ('medium', 'address', 'room_id', 'sender', 'token', 'received_ts', 'space_id')"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                medium,
+                normalised_address,
+                roomId,
+                sender,
+                token,
+                int(time.time()),
+                space_id,
+            ),
         )
         self.sydent.db.commit()
 
@@ -60,19 +74,19 @@ class JoinTokenStore:
         cur = self.sydent.db.cursor()
 
         res = cur.execute(
-            "SELECT medium, address, room_id, sender, token FROM invite_tokens"
+            "SELECT medium, address, room_id, sender, token, space_id FROM invite_tokens"
             " WHERE medium = ? AND address = ? AND sent_ts IS NULL",
             (
                 medium,
                 address,
             ),
         )
-        rows: List[Tuple[str, str, str, str, str]] = res.fetchall()
+        rows: List[Tuple[str, str, str, str, str, str]] = res.fetchall()
 
         ret = []
 
         for row in rows:
-            medium, address, roomId, sender, token = row
+            medium, address, roomId, sender, token, space_id = row
             ret.append(
                 {
                     "medium": medium,
@@ -80,6 +94,7 @@ class JoinTokenStore:
                     "room_id": roomId,
                     "sender": sender,
                     "token": token,
+                    "space_id": space_id,
                 }
             )
 
