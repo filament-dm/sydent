@@ -14,6 +14,7 @@
 from unittest.mock import patch
 
 from parameterized import parameterized
+from sydent.db.invite_tokens import JoinTokenStore
 from twisted.trial import unittest
 
 from sydent.users.accounts import Account
@@ -131,3 +132,56 @@ class StoreInviteTestCase(unittest.TestCase):
             },
             "Email substitutions dict missing expected values",
         )
+
+    def test_space_id_is_included_in_email(self) -> None:
+        """Test that space_id is threaded through our system"""
+        self.sydent.run()
+
+        with patch("sydent.http.servlets.store_invite_servlet.authV2") as authV2, patch(
+            "sydent.http.servlets.store_invite_servlet.sendEmail"
+        ) as mock_send_email:
+            authV2.return_value = Account(self.sender, 0, None)
+
+            request, channel = make_request(
+                self.sydent.reactor,
+                self.sydent.clientApiHttpServer.factory,
+                "POST",
+                "/_matrix/identity/v2/store-invite",
+                content={
+                    "address": "valid@example.com",
+                    "medium": "email",
+                    "room_id": "!myroom:test",
+                    "sender": self.sender,
+                    "space_id": "!myspace:test",
+                    "room_name": "My Room",
+                    "space_name": "My Space",
+                },
+            )
+
+        self.assertEqual(channel.code, 200)
+        mock_send_email.assert_called_once()
+
+        self.assertEqual(
+            mock_send_email.call_args[0][1], "matrix-org/invite_template.eml.j2"
+        )
+        self.assertEqual(
+            mock_send_email.call_args[0][2],
+            "valid@example.com",
+        )
+
+        self.assertDictContains(
+            mock_send_email.call_args[0][3],
+            {
+                "room_id": "!myroom:test",
+                "sender": "@alice:wonderland",
+                "space_id": "!myspace:test",
+                "space_name": "My Space",
+            },
+            "Email substitutions dict missing expected values",
+        )
+
+        # Also check that the invite is stored with space_id
+        invites = JoinTokenStore(self.sydent).getTokens("email", "valid@example.com")
+        self.assertEqual(len(invites), 1)
+        self.assertEqual(invites[0]["space_id"], "!myspace:test")
+        self.assertEqual(invites[0]["room_id"], "!myroom:test")

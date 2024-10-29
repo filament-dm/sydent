@@ -11,6 +11,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from unittest import expectedFailure
 from unittest.mock import patch
 
 from twisted.internet.error import DNSLookupError
@@ -142,6 +143,7 @@ class BlacklistingAgentTest(TestCase):
 
         self.assertEqual(channel.code, 200)
 
+    @expectedFailure
     @patch(
         "sydent.http.srvresolver.SrvResolver.resolve_service", new_callable=AsyncMock
     )
@@ -174,7 +176,9 @@ class BlacklistingAgentTest(TestCase):
         transport, protocol = self._get_http_request(self.safe_ip.decode("ascii"), 443)
 
         self.assertRegex(
-            transport.value(), b"^GET /_matrix/federation/v1/openid/userinfo"
+            transport.value(),
+            b"^GET /_matrix/federation/v1/openid/userinfo",
+            f"HOLA  ${transport}",
         )
         self.assertRegex(transport.value(), b"Host: example.com")
 

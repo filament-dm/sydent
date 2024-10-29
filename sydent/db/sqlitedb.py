@@ -204,6 +204,13 @@ class SqliteDatabase:
         if curVer < 5:
             # Fix lookup_hash index for selecting on mxid instead of medium
             cur = self.db.cursor()
+            cur.execute("ALTER TABLE invite_tokens " "ADD COLUMN space_id VARCHAR(256)")
+            self.db.commit()
+            logger.info("v5 -> v6 schema migration complete")
+            self._setSchemaVersion(5)
+
+        if curVer < 6:
+            cur = self.db.cursor()
             cur.execute("DROP INDEX IF EXISTS lookup_hash_medium")
             cur.execute(
                 "CREATE INDEX global_threepid_lookup_hash ON global_threepid_associations(lookup_hash)"

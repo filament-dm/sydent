@@ -61,7 +61,7 @@ class StoreInviteServlet(SydentResource):
             "room_id",
             "sender",
         )
-        non_required_args = ("skip_email",)
+        non_required_args = ("skip_email", "space_id")
         args = get_args(request, [*required_args, *non_required_args], required=False)
         # enforce required
         for arg in required_args:
@@ -76,6 +76,7 @@ class StoreInviteServlet(SydentResource):
         sender = args["sender"]
 
         skip_email = args.get("skip_email", False)
+        space_id = args.get("space_id", None)
 
         # ensure we are casefolding email address before storing
         normalised_address = normalise_address(address, medium)
@@ -135,7 +136,9 @@ class StoreInviteServlet(SydentResource):
         ephemeralPublicKeyBase64 = encode_base64(ephemeralPublicKey.encode(), True)
 
         tokenStore.storeEphemeralPublicKey(ephemeralPublicKeyBase64)
-        tokenStore.storeToken(medium, normalised_address, roomId, sender, token)
+        tokenStore.storeToken(
+            medium, normalised_address, roomId, sender, token, space_id
+        )
 
         # Variables to substitute in the template.
         substitutions = {}
@@ -171,6 +174,7 @@ class StoreInviteServlet(SydentResource):
             "guest_user_id",
             "guest_access_token",
             "room_type",
+            "space_name",
         ]
         for k in extra_substitutions:
             substitutions.setdefault(k, "")
