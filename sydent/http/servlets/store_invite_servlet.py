@@ -175,6 +175,7 @@ class StoreInviteServlet(SydentResource):
             "guest_access_token",
             "room_type",
             "space_name",
+            "invite_endpoint",
         ]
         for k in extra_substitutions:
             substitutions.setdefault(k, "")
