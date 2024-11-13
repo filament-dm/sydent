@@ -48,7 +48,7 @@ RUN addgroup --system --gid 993 sydent \
 
 RUN pip install -U litecli
 RUN apt-get update
-RUN apt-get install sqlite3
+RUN apt-get install -y sqlite3
 
 # Copy sydent and the virtualenv
 COPY --from=builder ["/home/sydent/src", "/home/sydent/src"]
