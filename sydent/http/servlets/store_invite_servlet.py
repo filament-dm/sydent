@@ -125,7 +125,7 @@ class StoreInviteServlet(SydentResource):
             request.setResponseCode(400)
             return {"errcode": "M_INVALID_PARAM", "error": "Invalid email provided"}
 
-        token = self._randomString(128)
+        token = self._randomString(16)
 
         tokenStore = JoinTokenStore(self.sydent)
 
@@ -323,4 +323,4 @@ class StoreInviteServlet(SydentResource):
 
         :return: The generated string.
         """
-        return "".join(self.random.choice(string.ascii_letters) for _ in range(length))
+        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
